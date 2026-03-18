@@ -1,97 +1,76 @@
-# Select All Tabs to Repeater (Burp Extension)
+# SALLT-1.2.1
 
-This extension adds a context menu item that sends *all selected* requests from any Burp tool tab to Repeater. You can configure tab naming and grouping behavior in the extension tab.
+`SALLT` is a Burp Suite extension that sends HTTP messages from Burp tables and Site map into Repeater, with grouping, deduplication, vulnerability-aware tab naming, startup history processing, JSON import/export support, and developer retest exports.
 
 ## Features
-- Send selected requests from Proxy, Target, Logger, etc. to Repeater.
-- Auto-poll newly discovered Burp Site map entries into Repeater for a configurable time window.
-- Export selected messages, including request/response bytes, to a JSON dataset.
-- Import a JSON dataset back into Repeater as new tabs.
-- Export tracked Repeater history seen by this extension to JSON.
-- Highlight selected messages in Burp by case-insensitive keyword terms from the request, response, or both.
-- Highlight Proxy history entries that match Burp Scanner findings, including built-in checks and BChecks.
-- Tab naming options:
-  - Hostname
-  - Custom name
-- Grouping options:
-  - None
-  - Hostname
-  - Custom name (named group)
-- Optional group tag prefix in tab names:
-  - Group name
-- Optional scope filter:
-  - `Only include in-scope items` skips out-of-scope selections before sending or polling
-- Optional highlight filter:
-  - Send only entries with a matching Burp highlight color such as `Red` or `Yellow`
-  - `Any Highlighted` matches any non-empty Burp highlight
-- Optional Proxy scan-finding highlighter:
-  - Toggle automatic Proxy highlighting for Burp scan findings on or off
-  - Map finding severities like `Critical`, `High`, `Medium`, `Low`, `Information`, and `False positive` to different Burp colors
-  - Matches Proxy items by exact messages when possible, then falls back to request and URL/method/path fingerprints for active-scan and BCheck findings
-  - Turning it off clears only highlights that this feature previously applied
-  - Includes a manual test that highlights every Proxy entry with a response so you can verify Burp highlighting works at all
-- Optional keyword highlighter:
-  - Match comma-separated terms against `Requests`, `Responses`, or `Requests + Responses`
-  - Import keyword wordlists from `.csv` or `.txt` files into the terms field
-  - Require `Any term` or `All terms`
-  - Apply a Burp highlight color so those entries can be filtered into Repeater later
-- Optional "method + path" suffix for easier identification.
-- Optional drift filter:
-  - Compare `Requests`, `Responses`, or `Requests + Responses`
-  - Only send messages whose drift is at or above your configured percentage threshold
+- Send selected requests from Proxy, Target, Logger, and similar Burp tables to Repeater.
+- Name tabs by hostname or a custom label.
+- Optionally append vulnerability reason and source to tab names.
+- Group tabs by hostname or custom group name, with optional `[Group:...]` prefixes.
+- Process historical Proxy history and Site map entries on startup.
+- Import the current Site map into Repeater on demand.
+- Optionally require Burp scan findings for Site map/history imports so scanner-backed entries are isolated before dispatch.
+- Repeated imports now allocate fresh Repeater tab captions so the same Site map batch can be imported again after earlier tabs were closed.
+- Auto-poll newly discovered Site map items into Repeater for a configurable time window.
+- Deduplicate with `Exact match`, `Normalized URL`, or `Drift-based` strategies.
+- Highlight Proxy history items from Burp scan findings, including built-in Scanner issues, BChecks, and extension-generated issues.
+- Export selected messages and tracked Repeater history to JSON.
+- Export selected messages as a developer retest package from the context menu:
+  - local web page harness bundle
+  - PowerShell retest script
+  - curl retest bundle
+- Import JSON datasets back into Repeater.
+- Run built-in import/export validation against synthetic, large, and corrupted datasets.
 
 ## Build
-1. Build the JAR:
-   - Windows:
-     ```
-     .\gradlew.bat jar
-     ```
-   - macOS/Linux:
-     ```
-     ./gradlew jar
-     ```
-2. Load the jar in Burp: **Extensions** -> **Add** -> **Java**.
+Build the jar with:
 
-The output jar will be in `build/libs/select-all-tabs-1.0.0.jar`.
+```powershell
+.\gradlew.bat jar
+```
+
+The output artifact is:
+
+`build/libs/SALLT-1.2.1.jar`
 
 ## Usage
-1. In Burp, select requests in any tab with an HTTP message table (e.g., Proxy history). Use Ctrl+A to select all.
-2. Right-click and choose **Select All Tabs -> Send selected to Repeater (Select All Tabs)**.
-3. To export messages, right-click selected messages and choose **Select All Tabs -> Export selected messages to JSON**.
-4. To import a dataset, use **Select All Tabs -> Import JSON dataset to Repeater** from the context menu or click **Import JSON dataset** in the extension tab.
-5. To export tracked Repeater traffic, use **Select All Tabs -> Export tracked Repeater history to JSON** or click **Export tracked Repeater history** in the extension tab.
-6. In the **Select All Tabs** extension tab, set:
-   - **Grouping** = **Custom Name**
-   - Your **Custom group name**
-   - Optional **Only include in-scope items**
-   - Optional **Highlight filter**
-   - Optional **Proxy scan-finding highlighter** toggle and severity-to-color mapping
-   - Optional **Keyword highlighter** terms, scope, match mode, and highlight color
-   - Optional **Drift filter mode** and **Minimum drift %**
-7. After sending, use the shared `[Group:...]` tag in Repeater tab captions to quickly create/select a single Repeater tab group.
-8. For fine-grained imports, select messages in Proxy/Target/Logger, right-click **Select All Tabs -> Highlight selected by keyword rules**, then run the normal send action with **Highlight filter** set to that same color.
-9. To automatically flag issues in Proxy history, enable **Highlight Proxy history entries with scan findings** and choose the colors you want for each severity. The extension will backfill existing findings and keep up with new Burp Scanner and BCheck issues.
-10. If scan-finding highlights are not appearing, use **Test: highlight all Proxy responses** first. If those highlights show up, the Burp highlight path is working and the remaining problem is issue matching rather than Burp itself.
-11. For larger keyword sets, click **Import keyword wordlist (.csv/.txt)** to merge file-based terms into the keyword highlighter field.
+1. Load `SALLT-1.2.1.jar` in Burp as a Java extension.
+2. Select messages in a Burp HTTP table, right-click, and use `SALLT -> Send selected to Repeater (SALLT)`.
+3. Configure naming, grouping, highlight filtering, vulnerability tagging, deduplication, and drift settings in the `SALLT` extension tab.
+4. Use `Import current Site map` in the extension tab or `SALLT -> Import current Site map to Repeater` from a context menu to pull current Site map entries into Repeater with the active deduplication, drift, grouping, and vulnerability settings.
+5. Enable `Require scan findings for Site map/history imports` if you only want scanner-backed Site map/history entries sent to Repeater.
+6. Enable `Process historical Proxy/Site map data on startup` if you want Burp to preload existing project data on future extension starts.
+7. Use `SALLT -> Export Developer Retest` from the context menu to generate:
+   - a local browser harness bundle with `open-harness.bat`
+   - a standalone `retest.ps1`
+   - a curl retest bundle with body assets
+8. Use `Import JSON dataset`, `Export tracked Repeater history`, and `Run import/export validation` from the extension tab as needed.
 
-## Auto-Poll
-1. Configure the same naming/grouping/scope settings you want to use for incoming items.
-2. Set **Auto-poll Site map interval (seconds)** and **Auto-poll total duration (seconds)**.
-3. Optionally enable a drift mode and threshold to suppress near-duplicate requests/responses within that auto-poll session.
-4. Click **Start auto-poll**.
-
-Notes:
-- Auto-poll snapshots the current Site map when it starts, then only considers newly discovered entries during that session.
-- When drift mode uses responses, messages without a response are skipped for that filter.
+## Deduplication
+- `Exact match`: deduplicates identical requests.
+- `Normalized URL`: deduplicates by scheme, host, port, method, and normalized path, ignoring query-string permutations.
+- `Drift-based`: uses the configured drift mode and threshold, plus URL-structure tokens, to suppress near-duplicates.
 
 ## JSON Datasets
-- Export is selection-based: choose the Repeater tabs or other HTTP messages you care about, then export only those.
-- Imported datasets recreate new Repeater tabs from the saved requests.
-- Selection-based dataset exports preserve the source Burp highlight value as metadata.
-- Response bytes are preserved in the JSON export, but Burp's extender API does not provide a way to preload those responses back into newly created Repeater tabs.
-- Tracked Repeater history export is best-effort: the classic Burp Extender API does not expose a list of all arbitrary Repeater tabs or their captions.
-- This extension records Repeater traffic it observes after the extension loads, and preserves tab names when those tabs were created through this extension and the request fingerprint still matches.
+- Schema version is now `2`.
+- Dataset items preserve request bytes, response bytes, Burp highlight values, and vulnerability metadata when available.
+- Imports remain backward-compatible with older dataset versions.
+- Burp's classic extender API still cannot preload responses directly into new Repeater tabs, so imported responses remain metadata only.
 
-## Notes
-- Grouping is implemented via tab name prefixes so you can visually group/sort tabs in Repeater.
-- Tab grouping and tab-group colors are not exposed through Burp's extender API, so this extension tags tab names consistently to make one-pass grouping fast in Repeater.
+## Developer Retest Exports
+- The web harness bundle includes `index.html`, `open-harness.bat`, `serve.ps1`, `retest.ps1`, `curl-retest.sh`, request body assets, and `retest.json`.
+- The browser harness is useful for quick visual retests and browser-only edge cases, but browser replay may still be limited by CORS, CSP, cookie scope, and forbidden browser-managed headers.
+- The PowerShell and curl outputs replay the exported requests more directly and save response artifacts to disk.
+
+## Validation
+- The extension includes an in-memory validator for import/export round trips.
+- Automated tests cover:
+  - synthetic datasets with vulnerability metadata
+  - large dataset round trips
+  - corrupted dataset rejection
+
+Run tests with:
+
+```powershell
+.\gradlew.bat test
+```
